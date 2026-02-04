@@ -157,7 +157,10 @@ public class WireMockApp implements StubServer, Admin {
     combinedListeners.put(httpStubListener.getName(), httpStubListener);
     serveEventListeners = Collections.unmodifiableMap(combinedListeners);
 
-    scenarios = new InMemoryScenarios(stores.getScenariosStore());
+    scenarios =
+        options.getSessionAwareScenariosEnabled()
+            ? new SessionAwareScenarios()
+            : new InMemoryScenarios(stores.getScenariosStore());
     stubMappings =
         new StoreBackedStubMappings(
             stores.getStubStore(),

@@ -29,6 +29,8 @@ import com.github.tomakehurst.wiremock.common.InvalidInputException;
 import com.github.tomakehurst.wiremock.common.Json;
 import com.github.tomakehurst.wiremock.common.Pair;
 import com.github.tomakehurst.wiremock.extension.*;
+import com.github.tomakehurst.wiremock.http.HttpHeader;
+import com.github.tomakehurst.wiremock.http.HttpHeaders;
 import com.github.tomakehurst.wiremock.http.Request;
 import com.github.tomakehurst.wiremock.http.ResponseDefinition;
 import com.github.tomakehurst.wiremock.matching.RequestMatcherExtension;
@@ -74,6 +76,9 @@ public abstract class AbstractStubMappings implements StubMappings {
     initialServeEvent = initialServeEvent.withIdDecoratedRequest();
     final LoggedRequest request = initialServeEvent.getRequest();
 
+    // Extract session ID from request
+    final SessionId sessionId = SessionId.extractFrom(request);
+
     final List<SubEvent> subEvents = new LinkedList<>();
 
     StubMapping matchingStub =
@@ -82,26 +87,33 @@ public abstract class AbstractStubMappings implements StubMappings {
             .filter(
                 stubMapping ->
                     stubMapping.isIndependentOfScenarioState()
-                        || scenarios.mappingMatchesScenarioState(stubMapping))
+                        || scenarios.mappingMatchesScenarioState(sessionId, stubMapping))
             .findFirst()
             .orElse(StubMapping.NOT_CONFIGURED);
 
     subEvents.forEach(initialServeEvent::appendSubEvent);
 
-    scenarios.onStubServed(matchingStub);
+    scenarios.onStubServed(sessionId, matchingStub);
 
     final ResponseDefinition initialResponseDefinition = matchingStub.getResponse();
+
+    // If session is new, add session ID to response metadata for cookie injection
+    ResponseDefinition responseDefWithSession = initialResponseDefinition;
+    if (sessionId.isNew() && scenarios.isSessionAware()) {
+      responseDefWithSession = addSessionIdToResponse(initialResponseDefinition, sessionId);
+    }
+
     ServeEvent serveEvent =
         initialServeEvent
             .withStubMapping(matchingStub)
-            .withResponseDefinition(initialResponseDefinition)
+            .withResponseDefinition(responseDefWithSession)
             .withPathParamDecoratedRequest();
 
     triggerListeners(serveEventListeners, AFTER_MATCH, serveEvent);
 
     ResponseDefinition responseDefinition =
         applyV1Transformations(
-            request, matchingStub.getResponse(), List.copyOf(transformers.values()));
+            request, serveEvent.getResponseDefinition(), List.copyOf(transformers.values()));
 
     serveEvent = serveEvent.withResponseDefinition(responseDefinition);
 
@@ -111,6 +123,20 @@ public abstract class AbstractStubMappings implements StubMappings {
     responseDefinition = transformed.b;
 
     return serveEvent.withResponseDefinition(copyOf(responseDefinition));
+  }
+
+  private ResponseDefinition addSessionIdToResponse(
+      ResponseDefinition responseDefinition, SessionId sessionId) {
+    String setCookieValue =
+        SessionId.COOKIE_NAME
+            + "="
+            + sessionId.getValue()
+            + "; Path=/; HttpOnly; SameSite=Lax";
+
+    HttpHeaders existingHeaders = responseDefinition.getHeaders();
+    HttpHeaders newHeaders = existingHeaders.plus(new HttpHeader("Set-Cookie", setCookieValue));
+
+    return responseDefinition.transform(builder -> builder.setHeaders(newHeaders));
   }
 
   private ResponseDefinition applyV1Transformations(

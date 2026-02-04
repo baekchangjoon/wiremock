@@ -165,4 +165,8 @@ public interface Options {
   long getWebSocketMaxTextMessageSize();
 
   long getWebSocketMaxBinaryMessageSize();
+
+  default boolean getSessionAwareScenariosEnabled() {
+    return false;
+  }
 }

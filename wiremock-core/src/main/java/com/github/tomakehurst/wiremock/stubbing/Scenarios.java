@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 Thomas Akehurst
+ * Copyright (C) 2022-2026 Thomas Akehurst
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package com.github.tomakehurst.wiremock.stubbing;
 
 import java.util.List;
+import java.util.Set;
 
 public interface Scenarios {
   Scenario getByName(String name);
@@ -39,4 +40,45 @@ public interface Scenarios {
   void clear();
 
   boolean mappingMatchesScenarioState(StubMapping mapping);
+
+  // Session-aware methods
+  default Scenario getByName(SessionId sessionId, String name) {
+    return getByName(name);
+  }
+
+  default List<Scenario> getAllForSession(SessionId sessionId) {
+    return getAll();
+  }
+
+  default void onStubServed(SessionId sessionId, StubMapping mapping) {
+    onStubServed(mapping);
+  }
+
+  default void resetSession(SessionId sessionId) {
+    reset();
+  }
+
+  default void resetSingle(SessionId sessionId, String name) {
+    resetSingle(name);
+  }
+
+  default void setSingle(SessionId sessionId, String name, String state) {
+    setSingle(name, state);
+  }
+
+  default void clearSession(SessionId sessionId) {
+    clear();
+  }
+
+  default boolean mappingMatchesScenarioState(SessionId sessionId, StubMapping mapping) {
+    return mappingMatchesScenarioState(mapping);
+  }
+
+  default Set<String> getActiveSessions() {
+    return Set.of();
+  }
+
+  default boolean isSessionAware() {
+    return false;
+  }
 }

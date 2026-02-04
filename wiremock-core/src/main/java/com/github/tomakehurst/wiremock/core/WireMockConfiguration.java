@@ -147,6 +147,8 @@ public class WireMockConfiguration implements Options {
   private long webSocketMaxTextMessageSize = DEFAULT_WEBSOCKET_MAX_TEXT_MESSAGE_SIZE;
   private long webSocketMaxBinaryMessageSize = DEFAULT_WEBSOCKET_MAX_BINARY_MESSAGE_SIZE;
 
+  private boolean sessionAwareScenariosEnabled = false;
+
   private MappingsSource getMappingsSource() {
     if (mappingsSource == null) {
       mappingsSource =
@@ -875,5 +877,15 @@ public class WireMockConfiguration implements Options {
   @Override
   public long getWebSocketMaxBinaryMessageSize() {
     return webSocketMaxBinaryMessageSize;
+  }
+
+  public WireMockConfiguration sessionAwareScenarios(boolean enabled) {
+    this.sessionAwareScenariosEnabled = enabled;
+    return this;
+  }
+
+  @Override
+  public boolean getSessionAwareScenariosEnabled() {
+    return sessionAwareScenariosEnabled;
   }
 }

@@ -135,6 +135,7 @@ public class CommandLineOptions implements Options {
   private static final String WEBSOCKET_MAX_TEXT_MESSAGE_SIZE = "websocket-max-text-message-size";
   private static final String WEBSOCKET_MAX_BINARY_MESSAGE_SIZE =
       "websocket-max-binary-message-size";
+  private static final String SESSION_AWARE_SCENARIOS = "session-aware-scenarios";
 
   private final OptionSet optionSet;
 
@@ -420,6 +421,9 @@ public class CommandLineOptions implements Options {
             WEBSOCKET_MAX_BINARY_MESSAGE_SIZE,
             "Maximum size in bytes for WebSocket binary messages (default: 65536)")
         .withRequiredArg();
+    optionParser.accepts(
+        SESSION_AWARE_SCENARIOS,
+        "Enable session-aware scenarios for isolated state management per session");
 
     optionParser.accepts(VERSION, "Prints wiremock version information and exits");
 
@@ -1098,5 +1102,10 @@ public class CommandLineOptions implements Options {
     return optionSet.has(WEBSOCKET_MAX_BINARY_MESSAGE_SIZE)
         ? Long.parseLong((String) optionSet.valueOf(WEBSOCKET_MAX_BINARY_MESSAGE_SIZE))
         : DEFAULT_WEBSOCKET_MAX_BINARY_MESSAGE_SIZE;
+  }
+
+  @Override
+  public boolean getSessionAwareScenariosEnabled() {
+    return optionSet.has(SESSION_AWARE_SCENARIOS);
   }
 }

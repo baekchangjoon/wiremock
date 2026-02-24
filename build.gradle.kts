@@ -18,6 +18,7 @@ plugins {
   id("idea")
   id("eclipse")
   id("project-report")
+  id("jacoco")
   alias(libs.plugins.jmh)
   alias(libs.plugins.task.tree)
 }
@@ -447,4 +448,11 @@ dependencyAnalysis {
       checkSuperClasses(true)
     }
   }
+}
+
+tasks.register("runWireMock", JavaExec::class) {
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("wiremock.Run")
+    jvmArgs("-javaagent:jacocoagent.jar=destfile=e2e.exec")
+    args("--session-aware-scenarios", "--port", "8080", "--verbose")
 }

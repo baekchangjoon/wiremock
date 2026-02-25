@@ -81,14 +81,21 @@ public abstract class AbstractStubMappings implements StubMappings {
 
     final List<SubEvent> subEvents = new LinkedList<>();
 
-    StubMapping matchingStub =
+    List<StubMapping> matchingStubs =
         store
             .findAllMatchingRequest(request, customMatchers, subEvents::add)
             .filter(
                 stubMapping ->
                     stubMapping.isIndependentOfScenarioState()
                         || scenarios.mappingMatchesScenarioState(sessionId, stubMapping))
+            .collect(toList());
+
+    // Prefer scenario-matched stubs over scenario-independent stubs
+    StubMapping matchingStub =
+        matchingStubs.stream()
+            .filter(stubMapping -> !stubMapping.isIndependentOfScenarioState())
             .findFirst()
+            .or(() -> matchingStubs.stream().findFirst())
             .orElse(StubMapping.NOT_CONFIGURED);
 
     subEvents.forEach(initialServeEvent::appendSubEvent);

@@ -55,6 +55,10 @@ tasks {
   test {
     // Set the timezone for testing somewhere other than my machine to increase the chances of catching timezone bugs
     systemProperty("user.timezone", "Australia/Sydney")
+    // Set the language for testing to English to ensure XML parser error messages are in English,
+    // which some tests assert on. The JVM's SAX/DOM parser caches error message resource bundles
+    // at first use, so Locale.setDefault() in @BeforeEach is unreliable under parallel test execution.
+    systemProperty("user.language", "en")
 
     useJUnitPlatform()
     exclude("ignored/**")
